@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "104076391535",
+    "project_id": "notes-app-rizqi-25",
+    "storage_bucket": "notes-app-rizqi-25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:104076391535:android:8e72b276ebb5fa5103c99a",
+        "android_client_info": {
+          "package_name": "com.example.notes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFddmDS08azS_Bii7aEq0MZbwnCwa9ccE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
