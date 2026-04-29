@@ -12,9 +12,12 @@ class NoteService {
       'title': note.title,
       'description': note.description,
       'image_base_64': note.imageBase64,
+      'latitude': note.latitude,
+      'longitude': note.longitude,
       'created_at': FieldValue.serverTimestamp(),
       'updated_at': FieldValue.serverTimestamp(),
     };
+
     await _notesCollection.add(newNote);
   }
 
@@ -23,6 +26,8 @@ class NoteService {
       'title': note.title,
       'description': note.description,
       'image_base_64': note.imageBase64,
+      'latitude': note.latitude,
+      'longitude': note.longitude,
       'created_at': note.createdAt,
       'updated_at': FieldValue.serverTimestamp(),
     };
@@ -42,11 +47,14 @@ class NoteService {
     return _notesCollection.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
         return Note(
           id: doc.id,
           title: data['title'],
           description: data['description'],
           imageBase64: data['image_base_64'],
+          latitude: data['latitude'],
+          longitude: data['longitude'],
           createdAt: data['created_at'] != null
               ? data['created_at'] as Timestamp
               : null,
