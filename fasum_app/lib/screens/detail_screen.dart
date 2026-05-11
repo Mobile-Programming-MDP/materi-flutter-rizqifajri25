@@ -1,174 +1,141 @@
 import 'dart:convert';
 
-import 'package:fasum_app/screens/full_image_screen.dart';
+import 'package:fasum_app/models/post.dart';
+import 'package:fasum_app/screens/map_detail_screen.dart';
+import 'package:fasum_app/services/post_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
-class DetailScreen extends StatefulWidget {
-  const DetailScreen({
-    super.key,
-    required this.imageBase64,
-    required this.description,
-    required this.createdAt,
-    required this.fullName,
-    required this.latitude,
-    required this.longitude,
-    required this.category,
-    required this.heroTag,
-  });
+class DetailScreen extends StatelessWidget {
+  final Post post;
 
-  final String imageBase64;
-  final String description;
-  final DateTime createdAt;
-  final String fullName;
-  final double latitude;
-  final double longitude;
-  final String category;
-  final String heroTag;
+  const DetailScreen({super.key, required this.post});
 
-  @override
-  State<DetailScreen> createState() => _DetailScreenState();
-}
-
-class _DetailScreenState extends State<DetailScreen> {
-  //install dependensi url_launcher : flutter pub add url_launcher
-  Future<void> openMap() async {
-    final uri = Uri.parse(
-        "https://www.google.com/maps/search/?api=1&query=${widget.latitude},${widget.longitude}");
-    final success = await launchUrl(
-      uri,
-      mode: LaunchMode.externalApplication,
+  Future<void> _deletePost(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Post'),
+        content: const Text('Are you sure you want to delete this post?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
-    if (!mounted) return;
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Tidak bisa membuka Google Map")));
+    if (confirm == true) {
+      await PostService.deletePost(post);
+      if (context.mounted) Navigator.pop(context);
     }
+  }
+
+  void _sharePost() {
+    final text =
+        '${post.category ?? ''}\n${post.description ?? ''}\nPosted by: ${post.userFullName ?? ''}';
+    SharePlus.instance.share(ShareParams(text: text));
   }
 
   @override
   Widget build(BuildContext context) {
-    final createdAtFormatted =
-        DateFormat('dd MM yyyy, HH:mm').format(widget.createdAt);
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    final isOwner = currentUserId != null && post.userId == currentUserId;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Detail Laporan"),
+        title: Text(post.category ?? 'Post Detail'),
+        actions: [
+          IconButton(
+            onPressed: _sharePost,
+            icon: const Icon(Icons.share),
+            tooltip: 'Share',
+          ),
+          if (isOwner)
+            IconButton(
+              onPressed: () => _deletePost(context),
+              icon: const Icon(Icons.delete),
+              tooltip: 'Delete',
+              color: Colors.red,
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                Hero(
-                  tag: widget.heroTag,
-                  child: Image.memory(
-                    base64Decode(widget.imageBase64),
-                    width: double.infinity,
-                    height: 250,
-                    fit: BoxFit.cover,
-                  ),
+            if (post.image != null && post.image!.isNotEmpty)
+              Image.memory(
+                base64Decode(post.image!),
+                width: double.infinity,
+                height: 250,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox(
+                  height: 250,
+                  child: Center(child: Icon(Icons.broken_image, size: 64)),
                 ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              FullImageScreen(imageBase64: widget.imageBase64),
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.fullscreen,
-                      color: Colors.white,
-                    ),
-                    tooltip: 'Lihat Gambar Penuh',
-                    style: IconButton.styleFrom(backgroundColor: Colors.black),
-                  ),
-                ),
-              ],
-            ),
+              ),
             Padding(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (post.category != null)
+                    Chip(label: Text(post.category!)),
+                  const SizedBox(height: 8),
+                  Text(
+                    post.description ?? '',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      //Kiri : kategori dan waktu
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.category,
-                                  size: 20,
-                                  color: Colors.red,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  widget.category,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                )
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.access_time,
-                                  size: 20,
-                                  color: Colors.red,
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  createdAtFormatted,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      //Kanan : icon map
-                      IconButton(
-                        onPressed: openMap,
-                        icon: const Icon(Icons.map,
-                            size: 38, color: Colors.lightGreen),
-                        tooltip: "Buka di Google Map",
+                      const Icon(Icons.person, size: 18, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        post.userFullName ?? 'Unknown',
+                        style: const TextStyle(color: Colors.grey),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.description,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "Lokasi",
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "${widget.latitude}, ${widget.longitude}",
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  if (post.latitude != null && post.longitude != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${post.latitude}, ${post.longitude}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => MapDetailScreen(post: post),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.map),
+                      label: const Text('View on Map'),
+                    ),
+                  ],
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

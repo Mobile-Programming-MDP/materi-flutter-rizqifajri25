@@ -2,41 +2,40 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Post {
   String? id;
-  final String category;
-  final String description;
-  String? imageBase64;
-  final String? latitude;
-  final String? longitude;
+  String? image;
+  String? description;
+  String? category;
   Timestamp? createdAt;
   Timestamp? updatedAt;
+  String? latitude;
+  String? longitude;
   String? userId;
   String? userFullName;
 
   Post({
     this.id,
-    required this.category,
-    required this.description,
-    this.imageBase64,
-    this.latitude,
-    this.longitude,
+    this.image,
+    this.description,
+    this.category,
     this.createdAt,
     this.updatedAt,
+    this.latitude,
+    this.longitude,
     this.userId,
     this.userFullName,
   });
 
   factory Post.fromDocument(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Post(
       id: doc.id,
-      category: data['category'] ?? '',
-      description: data['description'] ?? '',
-      imageBase64: data['image_base_64'],
-      latitude: data['latitude'],
-      longitude: data['longitude'],
-      createdAt: data['created_at'],
-      updatedAt: data['updated_at'],
+      image: doc['image'],
+      description: data['description'],
+      category: data['category'],
+      createdAt: data['created_at'] as Timestamp,
+      updatedAt: data['updated_at'] as Timestamp,
+      latitude: data['latitude']?.toString(),
+      longitude: data['longitude']?.toString(),
       userId: data['user_id'],
       userFullName: data['user_full_name'],
     );
@@ -44,9 +43,9 @@ class Post {
 
   Map<String, dynamic> toDocument() {
     return {
-      'category': category,
+      'image': image,
       'description': description,
-      'image_base_64': imageBase64,
+      'category': category,
       'latitude': latitude,
       'longitude': longitude,
       'created_at': createdAt,
